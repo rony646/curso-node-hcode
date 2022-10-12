@@ -1,0 +1,58 @@
+const  readline = require('readline');
+const { createSocket }  = require('dgram');
+const CommandParser = require('./CommandParser');
+const Commander = require('./Commander');
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
+const TELLO_CMD_PORT = 8889
+const TELLO_HOST = '192.168.10.1'
+
+const getSocket = () => {
+  const socket = createSocket('udp4');
+  socket.bind(TELLO_CMD_PORT)
+  return socket
+};
+
+(async function start(){
+  const socket = getSocket();
+  const cmder = new Commander(socket, TELLO_HOST, TELLO_CMD_PORT)
+  await cmder.sendInitCommand()
+  const cmdp = new CommandParser({
+    onTakeoff: async () => {await cmder.sendTakeOff()},
+    onLand: async () => {await cmder.sendLand()},
+    onForward: async (dist) => {await cmder.sendForward(dist)},
+    onBack: async () => {await cmder.sendBack()},
+    onRight: async (dist) => {await cmder.sendRight(dist)},
+    onLeft: async (dist) => {await cmder.sendLeft(dist)},
+    onFlip: async () => {await cmder.sendFlip()},
+    onBattery: async () => {await cmder.getBattery()},
+  })
+  console.log('Iniciando!');
+  socket.on('message', (msg) => {
+    console.log(`Dji tello: ${msg.toString()}`)
+  })
+
+  socket.on('error', (msg) => {
+    console.log(`Dji tello ERROR: ${err.toString()}`)
+  })
+
+  socket.on('listening', (msg) => {
+    console.log(`Dji tello is listening`)
+  })
+
+  console.log('Enter a command: ');
+  
+  rl.on('line', (line) => {
+    if(!cmdp.parseCommand(line)) {
+      if(line === 'exit') {
+        console.log('Bye!');
+        process.exit();
+      }
+      console.log('This is not a valid command!');
+    }
+  });
+})()
