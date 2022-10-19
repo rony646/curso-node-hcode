@@ -1,0 +1,10 @@
+ ###
+ POST http://localhost:3000/admin
+ Content-Type: application/json
+
+{
+  "login": "ronys",
+  "senha": "123"
+}
+ ###
+ 
