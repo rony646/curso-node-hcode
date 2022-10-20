@@ -4,6 +4,8 @@ const adminRoutes = require('./routes/admin');
 const userRoutes = require('./routes/user');
 const cookieParser = require('cookie-parser');
 
+app.use(express.static('public'));
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -33,6 +35,17 @@ app.get('/', (req, res) => {
 
 app.use('/admin', adminRoutes);
 app.use('/user', userRoutes);
+
+app.get('*', (req, res, next) => {
+  setImmediate(() => {
+    next(new Error('Temos um problema'));
+  })
+});
+
+app.use((err, req, res, next) => {
+  console.log(err.stack);
+  res.status(500).json({ message: err.message })
+});
 
 app.listen(3000, () => {
   console.log('Server running on: http://localhost:3000')
